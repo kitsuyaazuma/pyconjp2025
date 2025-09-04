@@ -9,9 +9,6 @@ dependencies = [
     "rich>=14.1.0",
 ]
 
-[tool.basedpyright]
-reportUnusedCallResult = false
-
 [dependency-groups]
 dev = [
     "mypy>=1.17.1",

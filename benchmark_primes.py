@@ -1,3 +1,4 @@
+# pyright: reportUnusedCallResult=false
 import argparse
 from dataclasses import dataclass
 import logging
