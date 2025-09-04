@@ -1,0 +1,137 @@
+import argparse
+from dataclasses import dataclass
+import logging
+import math
+import sys
+import os
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import multiprocessing as mp
+
+from utils import display_results, run_benchmark, setup_logging
+
+
+def is_prime(n: int) -> bool:
+    """Checks if a number is prime."""
+    if n <= 1:
+        return False
+    if n == 2:
+        return True
+    if n % 2 == 0:
+        return False
+    for i in range(3, int(math.sqrt(n)) + 1, 2):
+        if n % i == 0:
+            return False
+    return True
+
+
+def count_primes_in_range(start: int, end: int) -> int:
+    """Counts the number of primes within a given range."""
+    return sum(1 for n in range(start, end) if is_prime(n))
+
+
+def main(total_count: int, max_workers: int, num_tasks: int, runs: int) -> None:
+    """Sets up and runs the prime counting benchmark."""
+    logging.info(f"Checking primes up to {total_count:,} using {max_workers} workers.")
+
+    chunk_size = total_count // num_tasks
+
+    python_version = sys.version.partition("(")[0].strip()
+
+    def run_with_threading() -> None:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(
+                    count_primes_in_range,
+                    i * chunk_size,
+                    (i + 1) * chunk_size if i < num_tasks - 1 else total_count,
+                )
+                for i in range(num_tasks)
+            ]
+            results = [future.result() for future in futures]
+            _ = sum(results)
+
+    def run_with_multiprocessing() -> None:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(
+                    count_primes_in_range,
+                    i * chunk_size,
+                    (i + 1) * chunk_size if i < num_tasks - 1 else total_count,
+                )
+                for i in range(num_tasks)
+            ]
+            results = [future.result() for future in futures]
+            _ = sum(results)
+
+    gil_enabled = sys._is_gil_enabled()  # pyright: ignore[reportPrivateUsage]
+    results = run_benchmark(
+        {
+            f"Threading (w/{'' if gil_enabled else 'o'} GIL)": run_with_threading,
+            "Multiprocessing": run_with_multiprocessing,
+        },
+        runs=runs,
+    )
+
+    display_results(f"Prime Number Benchmark\n({python_version})", results)
+
+
+@dataclass
+class Args:
+    log_level: str
+    total_count: int
+    max_workers: int
+    num_tasks: int
+    runs: int
+    start_method: str
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        type=str,
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Logging level.",
+    )
+    parser.add_argument(
+        "-c",
+        "--total-count",
+        type=int,
+        default=1_000_000,
+        help="Total number for the countdown.",
+    )
+    parser.add_argument(
+        "-w",
+        "--max-workers",
+        type=int,
+        default=os.cpu_count(),
+        help="Maximum number of workers.",
+    )
+    parser.add_argument(
+        "-t",
+        "--num-tasks",
+        type=int,
+        default=os.cpu_count(),
+        help="Number of tasks to divide the work into.",
+    )
+    parser.add_argument(
+        "-r",
+        "--runs",
+        type=int,
+        default=3,
+        help="Number of times to run the benchmark.",
+    )
+    parser.add_argument(
+        "-s",
+        "--start-method",
+        type=str,
+        choices=mp.get_all_start_methods(),
+        default=mp.get_start_method(allow_none=True),
+    )
+    args = parser.parse_args(namespace=Args)
+
+    mp.set_start_method(args.start_method)
+    setup_logging(args.log_level)
+    main(args.total_count, args.max_workers, args.num_tasks, args.runs)
