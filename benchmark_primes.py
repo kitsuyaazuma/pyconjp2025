@@ -89,7 +89,7 @@ def main(total_count: int, max_workers: int, num_tasks: int, runs: int) -> None:
     gil_enabled = sys._is_gil_enabled()  # pyright: ignore[reportPrivateUsage]
     results = run_benchmark(
         {
-            f"Threading (w/{'' if gil_enabled else 'o'} GIL)": run_with_threading,
+            f"Threading ({'w/' if gil_enabled else 'w/o'} GIL)": run_with_threading,
             "Multiprocessing": run_with_multiprocessing,
         },
         runs=runs,
