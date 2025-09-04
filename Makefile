@@ -7,4 +7,15 @@ lint:
 type-check:
 	uv run mypy .
 
-all: format lint type-check
+check: format lint type-check
+
+gil:
+	uv python pin 3.14
+	uv venv -p 3.14 --clear
+	uv run python -VV
+
+nogil:
+	uv python pin 3.14t
+	uv venv -p 3.14t --clear
+	uv run python -VV
+
