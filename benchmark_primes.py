@@ -30,6 +30,24 @@ def count_primes_in_range(start: int, end: int) -> int:
     return sum(1 for n in range(start, end) if is_prime(n))
 
 
+def count_primes_sieve(limit: int) -> int:
+    """Counts primes p where 0 <= p < limit using a simple Sieve of Eratosthenes."""
+    if limit <= 2:
+        return 0
+
+    sieve = bytearray([1]) * limit
+    sieve[0] = 0
+    sieve[1] = 0
+
+    upper = int(math.isqrt(limit - 1))
+    for p in range(2, upper + 1):
+        if sieve[p]:
+            num_zeros = len(range(p * p, limit, p))
+            sieve[p * p : limit : p] = bytearray(num_zeros)
+
+    return int(sum(sieve))
+
+
 def main(total_count: int, max_workers: int, num_tasks: int, runs: int) -> None:
     """Sets up and runs the prime counting benchmark."""
     logging.info(f"Checking primes up to {total_count:,} using {max_workers} workers.")
@@ -37,6 +55,8 @@ def main(total_count: int, max_workers: int, num_tasks: int, runs: int) -> None:
     chunk_size = total_count // num_tasks
 
     python_version = sys.version.partition("(")[0].strip()
+
+    expected_count = count_primes_sieve(total_count)
 
     def run_with_threading() -> None:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -49,7 +69,8 @@ def main(total_count: int, max_workers: int, num_tasks: int, runs: int) -> None:
                 for i in range(num_tasks)
             ]
             results = [future.result() for future in futures]
-            _ = sum(results)
+            count = sum(results)
+            assert count == expected_count
 
     def run_with_multiprocessing() -> None:
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -62,7 +83,8 @@ def main(total_count: int, max_workers: int, num_tasks: int, runs: int) -> None:
                 for i in range(num_tasks)
             ]
             results = [future.result() for future in futures]
-            _ = sum(results)
+            count = sum(results)
+            assert count == expected_count
 
     gil_enabled = sys._is_gil_enabled()  # pyright: ignore[reportPrivateUsage]
     results = run_benchmark(
