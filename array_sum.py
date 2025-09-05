@@ -99,8 +99,8 @@ def main(
     results = run_benchmark(
         {
             f"Threading ({'w/' if gil_enabled else 'w/o'} GIL)": run_with_threading,
-            "Multiprocessing (Serialization)": run_with_multiprocessing,
-            "Multiprocessing (Shared Memory)": run_with_multiprocessing_shm,
+            "Multiprocessing": run_with_multiprocessing,
+            "Multiprocessing (w/ Shared Memory)": run_with_multiprocessing_shm,
         },
         runs,
     )

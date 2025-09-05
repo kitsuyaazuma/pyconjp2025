@@ -1,14 +1,22 @@
 # pyright: reportUnusedCallResult=false
 import argparse
+from datetime import datetime
 import os
 import multiprocessing as mp
 from dataclasses import dataclass
+from pathlib import Path
 import sys
 from typing import Callable, NamedTuple
 
 import array_sum
 import prime_count
-from utils import Result, display_results, plot_results, setup_logging
+from utils import (
+    Result,
+    display_results,
+    plot_results,
+    save_results_to_csv,
+    setup_logging,
+)
 
 
 class BenchmarkCase(NamedTuple):
@@ -54,8 +62,14 @@ class Args:
 
 
 def main(max_workers: int, num_tasks: int, runs: int) -> None:
-    all_plot_data: list[tuple[str, str, list[Result]]] = []
+    all_plot_data: list[tuple[str, Path, list[Result]]] = []
     python_version = sys.version.partition("(")[0].strip()
+
+    base_results_dir = Path("results")
+    base_results_dir.mkdir(exist_ok=True)
+
+    results_dir = base_results_dir / datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_dir.mkdir(exist_ok=True)
 
     for case in BENCHMARK_CASES:
         all_results_for_case: list[Result] = []
@@ -68,10 +82,14 @@ def main(max_workers: int, num_tasks: int, runs: int) -> None:
                     Result(r.method, r.avg_time, r.std_time, size)
                 )
 
-        output_filename = case.output_filename
+        base_filename = case.output_filename
         if not sys._is_gil_enabled():  # pyright: ignore[reportPrivateUsage]
-            output_filename = case.output_filename.replace(".png", "_nogil.png")
-        all_plot_data.append((case.name, output_filename, all_results_for_case))
+            base_filename += "_nogil"
+        png_path = results_dir / f"{base_filename}.png"
+        csv_path = results_dir / f"{base_filename}.csv"
+
+        save_results_to_csv(all_results_for_case, csv_path)
+        all_plot_data.append((case.name, png_path, all_results_for_case))
 
     for title, output_filename, results in all_plot_data:
         plot_results(title, results, output_filename)

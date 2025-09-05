@@ -1,5 +1,7 @@
 from collections import defaultdict
+import csv
 import logging
+from pathlib import Path
 import time
 from typing import Callable, NamedTuple
 from rich.console import Console
@@ -60,7 +62,9 @@ def display_results(title: str, results: list[Result]) -> None:
     console.print(table)
 
 
-def plot_results(title: str, results: list[Result], output_filename: str) -> None:
+def plot_results(
+    title: str, results: list[Result], output_filename: str | Path
+) -> None:
     grouped_results: defaultdict[str, list[tuple[int, float, float]]] = defaultdict(
         list
     )
@@ -99,3 +103,17 @@ def plot_results(title: str, results: list[Result], output_filename: str) -> Non
     plt.close(fig)
 
     logging.info(f"Saved line graph to {output_filename}")
+
+
+def save_results_to_csv(results: list[Result], output_filename: str | Path) -> None:
+    """Saves benchmark results to a CSV file."""
+    with open(output_filename, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(
+            ["Method", "Average Time (s)", "Standard Deviation (s)", "Problem Size"]
+        )
+        for result in results:
+            writer.writerow(
+                [result.method, result.avg_time, result.std_time, result.problem_size]
+            )
+    logging.info(f"Saved results to {output_filename}")
