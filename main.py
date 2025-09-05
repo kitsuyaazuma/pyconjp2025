@@ -29,7 +29,7 @@ class BenchmarkCase(NamedTuple):
 BENCHMARK_CASES: list[BenchmarkCase] = [
     BenchmarkCase(
         "Array Summation Benchmark",
-        "array_sum.png",
+        "array_sum",
         [
             10_000,
             50_000,
@@ -45,7 +45,7 @@ BENCHMARK_CASES: list[BenchmarkCase] = [
     ),
     BenchmarkCase(
         "Prime Counting Benchmark",
-        "prime_count.png",
+        "prime_count",
         [1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000, 5_000_000],
         prime_count.main,
     ),
