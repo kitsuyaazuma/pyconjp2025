@@ -89,7 +89,7 @@ def main(max_workers: int, num_tasks: int, runs: int) -> None:
         csv_path = results_dir / f"{base_filename}.csv"
 
         save_results_to_csv(all_results_for_case, csv_path)
-        all_plot_data.append((case.name, png_path, all_results_for_case))
+        all_plot_data.append((title.replace("\n", " "), png_path, all_results_for_case))
 
     for title, output_filename, results in all_plot_data:
         plot_results(title, results, output_filename)

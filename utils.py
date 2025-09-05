@@ -10,6 +10,7 @@ from rich.table import Table
 from rich.progress import track
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -74,8 +75,9 @@ def plot_results(
             (result.problem_size, result.avg_time, result.std_time)
         )
 
-    plt.figure(figsize=(12, 8))
-    fig, ax = plt.subplots(figsize=(12, 8))
+    plt.rcParams["font.size"] = 14
+    plt.rcParams["axes.labelsize"] = 14
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     for method, data in grouped_results.items():
         data.sort(key=lambda x: x[0])
@@ -87,19 +89,25 @@ def plot_results(
             yerr=std_times,
             label=method,
             marker="o",
-            capsize=3,
+            markersize=7,
+            linewidth=2,
+            capsize=5,
+            elinewidth=1.5,
         )
 
-    ax.set_title(title, fontsize=16)
-    ax.set_xlabel("Problem Size", fontsize=12)
-    ax.set_ylabel("Execution Time (s)", fontsize=12)
+    ax.set_title(title, fontsize=14)
+    ax.set_xlabel("Problem Size")
+    ax.set_ylabel("Execution Time (s)")
     ax.set_xscale("log")
-    # ax.set_yscale('log')
-    ax.grid(True, which="both", ls="--", linewidth=0.5)
-    ax.legend(title="Method")
+    ax.tick_params(axis="both", which="major")
+    ax.tick_params(axis="both", which="minor")
+    ax.grid(True, which="major", ls="--", linewidth=0.8, alpha=0.6)
+    ax.grid(True, which="minor", ls=":", linewidth=0.6, alpha=0.4)
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+    ax.legend(fontsize=14)
 
     fig.tight_layout()
-    fig.savefig(output_filename)
+    fig.savefig(output_filename, dpi=200)
     plt.close(fig)
 
     logging.info(f"Saved line graph to {output_filename}")
