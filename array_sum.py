@@ -55,21 +55,21 @@ def main(
     expected_total = np.int64(problem_size * (problem_size - 1) // 2)
 
     def run_with_threading() -> None:
-        with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures: list[Future[np.int64]] = []
-            for i in range(args.num_tasks):
+            for i in range(num_tasks):
                 start = i * chunk_size
-                end = (i + 1) * chunk_size if i < args.num_tasks - 1 else problem_size
+                end = (i + 1) * chunk_size if i < num_tasks - 1 else problem_size
                 futures.append(executor.submit(sum_array_chunk, data[start:end]))
             total = sum(future.result() for future in futures)
             assert total == expected_total
 
     def run_with_multiprocessing() -> None:
-        with ProcessPoolExecutor(max_workers=args.max_workers) as executor:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
             futures: list[Future[np.int64]] = []
-            for i in range(args.num_tasks):
+            for i in range(num_tasks):
                 start = i * chunk_size
-                end = (i + 1) * chunk_size if i < args.num_tasks - 1 else problem_size
+                end = (i + 1) * chunk_size if i < num_tasks - 1 else problem_size
                 futures.append(executor.submit(sum_array_chunk, data[start:end]))
             total = sum(future.result() for future in futures)
             assert total == expected_total
@@ -79,13 +79,11 @@ def main(
         try:
             shm_array = np.ndarray(data.shape, dtype=data.dtype, buffer=shm.buf)
             shm_array[:] = data[:]
-            with ProcessPoolExecutor(max_workers=args.max_workers) as executor:
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 futures: list[Future[np.int64]] = []
-                for i in range(args.num_tasks):
+                for i in range(num_tasks):
                     start = i * chunk_size
-                    end = (
-                        (i + 1) * chunk_size if i < args.num_tasks - 1 else problem_size
-                    )
+                    end = (i + 1) * chunk_size if i < num_tasks - 1 else problem_size
                     futures.append(
                         executor.submit(
                             sum_array_shm, shm.name, data.shape, data.dtype, start, end
@@ -164,6 +162,7 @@ if __name__ == "__main__":
         type=str,
         choices=mp.get_all_start_methods(),
         default=mp.get_start_method(allow_none=True),
+        help="Multiprocessing start method.",
     )
     args = parser.parse_args(namespace=Args)
 
@@ -177,4 +176,4 @@ if __name__ == "__main__":
         runs=args.runs,
     )
     python_version = sys.version.partition("(")[0].strip()
-    display_results(f"NumPy Summation Benchmark ({python_version})", results)
+    display_results(f"Array Summation Benchmark\n({python_version})", results)

@@ -5,6 +5,7 @@ description = "Demo code for the PyConJP 2025 talk: 'Beyond Multiprocessing: A R
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "matplotlib>=3.10.6",
     "numpy>=2.3.2",
     "rich>=14.1.0",
 ]

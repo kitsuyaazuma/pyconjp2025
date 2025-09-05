@@ -152,6 +152,7 @@ if __name__ == "__main__":
         type=str,
         choices=mp.get_all_start_methods(),
         default=mp.get_start_method(allow_none=True),
+        help="Multiprocessing start method.",
     )
     args = parser.parse_args(namespace=Args)
 
