@@ -9,7 +9,7 @@ from multiprocessing import shared_memory
 from concurrent.futures import Future, ThreadPoolExecutor, ProcessPoolExecutor
 import numpy as np
 import numpy.typing as npt
-from utils import setup_logging, run_benchmark, display_results
+from utils import Result, setup_logging, run_benchmark, display_results
 
 
 def sum_array_chunk(data: npt.NDArray[np.int64]) -> np.int64:
@@ -41,25 +41,25 @@ def sum_array_shm(
     return total
 
 
-def main(num_elements: int, max_workers: int, num_tasks: int, runs: int):
+def main(
+    problem_size: int, max_workers: int, num_tasks: int, runs: int
+) -> list[Result]:
     """Sets up and runs the NumPy array summation benchmark."""
     logging.info(
-        f"Summing array with {num_elements:,} elements using {max_workers} workers."
+        f"Summing array with {problem_size:,} elements using {max_workers} workers."
     )
 
-    data = np.arange(num_elements, dtype=np.int64)
-    chunk_size = args.num_elements // num_tasks
+    data = np.arange(problem_size, dtype=np.int64)
+    chunk_size = problem_size // num_tasks
 
-    python_version = sys.version.partition("(")[0].strip()
-
-    expected_total = np.int64(num_elements * (num_elements - 1) // 2)
+    expected_total = np.int64(problem_size * (problem_size - 1) // 2)
 
     def run_with_threading() -> None:
         with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
             futures: list[Future[np.int64]] = []
             for i in range(args.num_tasks):
                 start = i * chunk_size
-                end = (i + 1) * chunk_size if i < args.num_tasks - 1 else num_elements
+                end = (i + 1) * chunk_size if i < args.num_tasks - 1 else problem_size
                 futures.append(executor.submit(sum_array_chunk, data[start:end]))
             total = sum(future.result() for future in futures)
             assert total == expected_total
@@ -69,7 +69,7 @@ def main(num_elements: int, max_workers: int, num_tasks: int, runs: int):
             futures: list[Future[np.int64]] = []
             for i in range(args.num_tasks):
                 start = i * chunk_size
-                end = (i + 1) * chunk_size if i < args.num_tasks - 1 else num_elements
+                end = (i + 1) * chunk_size if i < args.num_tasks - 1 else problem_size
                 futures.append(executor.submit(sum_array_chunk, data[start:end]))
             total = sum(future.result() for future in futures)
             assert total == expected_total
@@ -84,7 +84,7 @@ def main(num_elements: int, max_workers: int, num_tasks: int, runs: int):
                 for i in range(args.num_tasks):
                     start = i * chunk_size
                     end = (
-                        (i + 1) * chunk_size if i < args.num_tasks - 1 else num_elements
+                        (i + 1) * chunk_size if i < args.num_tasks - 1 else problem_size
                     )
                     futures.append(
                         executor.submit(
@@ -106,14 +106,13 @@ def main(num_elements: int, max_workers: int, num_tasks: int, runs: int):
         },
         runs,
     )
-
-    display_results(f"NumPy Summation Benchmark ({python_version})", results)
+    return results
 
 
 @dataclass
 class Args:
     log_level: str
-    num_elements: int
+    problem_size: int
     max_workers: int
     num_tasks: int
     runs: int
@@ -131,11 +130,12 @@ if __name__ == "__main__":
         help="Logging level.",
     )
     parser.add_argument(
-        "-n",
-        "--num-elements",
+        "-s",
+        "--size",
+        dest="problem_size",
         type=int,
         default=10_000_000,
-        help="Number of elements in the NumPy array.",
+        help="Problem size (number of elements in the NumPy array).",
     )
     parser.add_argument(
         "-w",
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         help="Number of times to run the benchmark.",
     )
     parser.add_argument(
-        "-s",
+        "-m",
         "--start-method",
         type=str,
         choices=mp.get_all_start_methods(),
@@ -169,9 +169,12 @@ if __name__ == "__main__":
 
     setup_logging()
     mp.set_start_method(args.start_method)
-    main(
-        num_elements=args.num_elements,
+
+    results = main(
+        problem_size=args.problem_size,
         max_workers=args.max_workers,
         num_tasks=args.num_tasks,
         runs=args.runs,
     )
+    python_version = sys.version.partition("(")[0].strip()
+    display_results(f"NumPy Summation Benchmark ({python_version})", results)
