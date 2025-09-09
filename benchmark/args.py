@@ -42,7 +42,7 @@ def create_parser() -> argparse.ArgumentParser:
         "-r",
         "--runs",
         type=int,
-        default=3,
+        default=1,
         help="Number of times to run the benchmark.",
     )
     parser.add_argument(

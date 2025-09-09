@@ -89,11 +89,10 @@ def main(
             count = sum(results)
             assert count == expected_count
 
-    gil_enabled = sys._is_gil_enabled()  # pyright: ignore[reportPrivateUsage]
     results = run_benchmark(
         {
-            f"Threading ({'w/' if gil_enabled else 'w/o'} GIL)": run_with_threading,
-            "Multiprocessing": run_with_multiprocessing,
+            "threading": run_with_threading,
+            "multiprocessing": run_with_multiprocessing,
         },
         runs=runs,
     )

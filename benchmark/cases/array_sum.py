@@ -100,12 +100,11 @@ def main(
             shm.close()
             shm.unlink()
 
-    gil_enabled = sys._is_gil_enabled()  # pyright: ignore[reportPrivateUsage]
     results = run_benchmark(
         {
-            f"Threading ({'w/' if gil_enabled else 'w/o'} GIL)": run_with_threading,
-            "Multiprocessing": run_with_multiprocessing,
-            "Multiprocessing (w/ Shared Memory)": run_with_multiprocessing_shm,
+            "threading": run_with_threading,
+            "multiprocessing": run_with_multiprocessing,
+            "multiprocessing (w/ shm)": run_with_multiprocessing_shm,
         },
         runs,
     )

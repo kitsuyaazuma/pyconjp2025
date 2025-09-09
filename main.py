@@ -3,6 +3,7 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Callable, NamedTuple
+import numpy as np
 
 from benchmark import (
     Result,
@@ -26,23 +27,13 @@ BENCHMARK_CASES: list[BenchmarkCase] = [
     BenchmarkCase(
         "Array Summation Benchmark",
         "array_sum",
-        [
-            10_000,
-            50_000,
-            100_000,
-            500_000,
-            1_000_000,
-            5_000_000,
-            10_000_000,
-            50_000_000,
-            100_000_000,
-        ],
+        list(np.geomspace(10_000, 100_000_000, num=9, dtype=int)),
         array_sum.main,
     ),
     BenchmarkCase(
         "Prime Counting Benchmark",
         "prime_count",
-        [1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000, 5_000_000],
+        np.geomspace(1_000, 10_000_000, num=9, dtype=int).tolist(),
         prime_count.main,
     ),
 ]
