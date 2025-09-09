@@ -9,14 +9,13 @@ import sys
 from typing import Callable, NamedTuple
 
 from benchmark import (
-    array_sum,
-    prime_count,
     Result,
     display_results,
     plot_results,
     save_results_to_csv,
     setup_logging,
 )
+from benchmark.cases import array_sum, prime_count
 
 
 class BenchmarkCase(NamedTuple):
