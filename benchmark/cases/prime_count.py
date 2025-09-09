@@ -5,10 +5,12 @@ import logging
 import math
 import sys
 import os
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, wait
 import multiprocessing as mp
 
-from utils import Result, display_results, run_benchmark, setup_logging
+from ..models import Result
+from ..report import display_results
+from ..runner import run_benchmark, setup_logging
 
 
 def is_prime(n: int) -> bool:
@@ -68,6 +70,7 @@ def main(
                 )
                 for i in range(num_tasks)
             ]
+            wait(futures)
             results = [future.result() for future in futures]
             count = sum(results)
             assert count == expected_count
@@ -82,6 +85,7 @@ def main(
                 )
                 for i in range(num_tasks)
             ]
+            wait(futures)
             results = [future.result() for future in futures]
             count = sum(results)
             assert count == expected_count

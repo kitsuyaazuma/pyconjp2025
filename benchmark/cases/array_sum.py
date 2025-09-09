@@ -6,10 +6,13 @@ import sys
 import os
 import multiprocessing as mp
 from multiprocessing import shared_memory
-from concurrent.futures import Future, ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, ProcessPoolExecutor, wait
 import numpy as np
 import numpy.typing as npt
-from utils import Result, setup_logging, run_benchmark, display_results
+
+from ..models import Result
+from ..report import display_results
+from ..runner import run_benchmark, setup_logging
 
 
 def sum_array_chunk(data: npt.NDArray[np.int64]) -> np.int64:
@@ -61,6 +64,7 @@ def main(
                 start = i * chunk_size
                 end = (i + 1) * chunk_size if i < num_tasks - 1 else problem_size
                 futures.append(executor.submit(sum_array_chunk, data[start:end]))
+            wait(futures)
             total = sum(future.result() for future in futures)
             assert total == expected_total
 
@@ -71,6 +75,7 @@ def main(
                 start = i * chunk_size
                 end = (i + 1) * chunk_size if i < num_tasks - 1 else problem_size
                 futures.append(executor.submit(sum_array_chunk, data[start:end]))
+            wait(futures)
             total = sum(future.result() for future in futures)
             assert total == expected_total
 
@@ -89,6 +94,7 @@ def main(
                             sum_array_shm, shm.name, data.shape, data.dtype, start, end
                         )
                     )
+                wait(futures)
                 total = sum(future.result() for future in futures)
                 assert total == expected_total
         finally:

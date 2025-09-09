@@ -1,56 +1,15 @@
 from collections import defaultdict
-import csv
 import logging
 from pathlib import Path
-import time
-from typing import Callable, NamedTuple
-from rich.console import Console
-from rich.logging import RichHandler
-from rich.table import Table
-from rich.progress import track
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoMinorLocator
 
-
-def setup_logging(level: str = "INFO") -> None:
-    """Configures logging using RichHandler for clean output."""
-    logging.basicConfig(
-        level=level,
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler(markup=True, rich_tracebacks=True)],
-    )
-
-
-def run_benchmark(benchmarks: dict[str, Callable[[], None]], runs: int) -> list[Result]:
-    """Runs a set of benchmark methods for a specified number of runs and collects execution statistics."""
-    execution_times: dict[str, list[float]] = {name: [] for name in benchmarks.keys()}
-
-    for _ in track(range(runs), description="Benchmark Progress"):
-        for name, task in benchmarks.items():
-            start_time = time.perf_counter()
-            task()
-            end_time = time.perf_counter()
-            execution_times[name].append(end_time - start_time)
-
-    benchmark_results: list[Result] = []
-    for name, times in execution_times.items():
-        avg = float(np.mean(times))
-        std = float(np.std(times))
-        benchmark_results.append(Result(name, avg, std))
-    return benchmark_results
-
-
-class Result(NamedTuple):
-    method: str
-    avg_time: float
-    std_time: float
-    problem_size: int | None = None
+from .models import Result
 
 
 def display_results(title: str, results: list[Result]) -> None:
     """Displays benchmark results in a formatted table using Rich."""
+    from rich.console import Console
+    from rich.table import Table
+
     console = Console()
 
     table = Table(title=title, show_header=True, header_style="bold magenta")
@@ -66,6 +25,9 @@ def display_results(title: str, results: list[Result]) -> None:
 def plot_results(
     title: str, results: list[Result], output_filename: str | Path
 ) -> None:
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import AutoMinorLocator
+
     grouped_results: defaultdict[str, list[tuple[int, float, float]]] = defaultdict(
         list
     )
@@ -115,6 +77,8 @@ def plot_results(
 
 def save_results_to_csv(results: list[Result], output_filename: str | Path) -> None:
     """Saves benchmark results to a CSV file."""
+    import csv
+
     with open(output_filename, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(

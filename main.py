@@ -8,9 +8,9 @@ from pathlib import Path
 import sys
 from typing import Callable, NamedTuple
 
-import array_sum
-import prime_count
-from utils import (
+from benchmark import (
+    array_sum,
+    prime_count,
     Result,
     display_results,
     plot_results,
