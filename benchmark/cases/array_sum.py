@@ -19,7 +19,7 @@ def sum_array_chunk(data: npt.NDArray[np.int64]) -> np.int64:
     """Calculates the sum of a given NumPy array chunk."""
     total = np.int64(0)
     # NOTE: Intentionally not using np.sum(data) to simulate a CPU-bound task.
-    for value in data.flatten():
+    for value in data.reshape(-1):
         total += value
     return total
 
@@ -36,7 +36,7 @@ def sum_array_shm(
         ]
         # NOTE: Intentionally not using np.sum(data) to simulate a CPU-bound task.
         total = np.int64(0)
-        for value in data.flatten():
+        for value in data.reshape(-1):
             total += value
     finally:
         if shm:
