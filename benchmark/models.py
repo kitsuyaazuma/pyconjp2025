@@ -5,4 +5,4 @@ class Result(NamedTuple):
     method: str
     avg_time: float
     std_time: float
-    problem_size: int | None = None
+    max_workers: int | None = None

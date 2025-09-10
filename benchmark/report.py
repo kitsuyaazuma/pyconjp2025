@@ -32,9 +32,9 @@ def plot_results(
         list
     )
     for result in results:
-        assert result.problem_size is not None
+        assert result.max_workers is not None
         grouped_results[result.method].append(
-            (result.problem_size, result.avg_time, result.std_time)
+            (result.max_workers, result.avg_time, result.std_time)
         )
 
     plt.rcParams["font.size"] = 14
@@ -58,9 +58,8 @@ def plot_results(
         )
 
     ax.set_title(title, fontsize=14)
-    ax.set_xlabel("Problem Size")
+    ax.set_xlabel("Number of Workers")
     ax.set_ylabel("Execution Time (s)")
-    ax.set_xscale("log")
     ax.tick_params(axis="both", which="major")
     ax.tick_params(axis="both", which="minor")
     ax.grid(True, which="major", ls="--", linewidth=0.8, alpha=0.6)
@@ -82,10 +81,10 @@ def save_results_to_csv(results: list[Result], output_filename: str | Path) -> N
     with open(output_filename, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(
-            ["Method", "Average Time (s)", "Standard Deviation (s)", "Problem Size"]
+            ["Method", "Average Time (s)", "Standard Deviation (s)", "Max Workers"]
         )
         for result in results:
             writer.writerow(
-                [result.method, result.avg_time, result.std_time, result.problem_size]
+                [result.method, result.avg_time, result.std_time, result.max_workers]
             )
     logging.info(f"Saved results to {output_filename}")

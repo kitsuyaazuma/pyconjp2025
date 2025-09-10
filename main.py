@@ -1,5 +1,6 @@
 from datetime import datetime
 import multiprocessing as mp
+import os
 from pathlib import Path
 import sys
 from typing import Callable, NamedTuple
@@ -19,27 +20,32 @@ from benchmark.cases import array_sum, prime_count
 class BenchmarkCase(NamedTuple):
     name: str
     output_filename: str
-    problem_sizes: list[int]
+    problem_size: int
+    max_workers_list: list[int]
     run_function: Callable[[int, int, int, int], list[Result]]
 
+
+MAX_WORKERS_LIST = [2**i for i in range(int(math.log2(os.cpu_count() or 1) + 1))]
 
 BENCHMARK_CASES: list[BenchmarkCase] = [
     BenchmarkCase(
         "Array Summation Benchmark",
         "array_sum",
-        [int(math.sqrt(10) ** (i + 8)) for i in range(10)],
+        100_000_000,
+        MAX_WORKERS_LIST,
         array_sum.main,
     ),
     BenchmarkCase(
         "Prime Counting Benchmark",
         "prime_count",
-        [int(math.sqrt(10) ** (i + 6)) for i in range(9)],
+        10_000_000,
+        MAX_WORKERS_LIST,
         prime_count.main,
     ),
 ]
 
 
-def main(max_workers: int, num_tasks: int, runs: int) -> None:
+def main(runs: int) -> None:
     all_plot_data: list[tuple[str, Path, list[Result]]] = []
     python_version = sys.version.partition("(")[0].strip()
 
@@ -52,12 +58,14 @@ def main(max_workers: int, num_tasks: int, runs: int) -> None:
     for case in BENCHMARK_CASES:
         all_results_for_case: list[Result] = []
         title = f"{case.name}\n({python_version})"
-        for size in case.problem_sizes:
-            results = case.run_function(size, max_workers, num_tasks, runs)
+        for max_workers in case.max_workers_list:
+            results = case.run_function(
+                case.problem_size, max_workers, max_workers, runs
+            )
             display_results(title, results)
             for r in results:
                 all_results_for_case.append(
-                    Result(r.method, r.avg_time, r.std_time, size)
+                    Result(r.method, r.avg_time, r.std_time, max_workers)
                 )
 
         base_filename = case.output_filename
@@ -79,4 +87,4 @@ if __name__ == "__main__":
 
     mp.set_start_method(args.start_method)
     setup_logging(args.log_level)
-    main(args.max_workers, args.num_tasks, args.runs)
+    main(args.runs)
