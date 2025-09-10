@@ -1,5 +1,4 @@
 # pyright: reportUnusedCallResult=false
-from dataclasses import dataclass
 import logging
 import sys
 import multiprocessing as mp
@@ -12,6 +11,9 @@ from ..args import CommonArgs, create_parser
 from ..models import Result
 from ..report import display_results
 from ..runner import run_benchmark, setup_logging
+
+BENCHMARK_NAME = "Array Summation Benchmark"
+DEFAULT_PROBLEM_SIZE = 100_000_000
 
 
 def sum_array_chunk(data: npt.NDArray[np.int64]) -> np.int64:
@@ -44,7 +46,7 @@ def sum_array_shm(
 
 
 def main(
-    problem_size: int, max_workers: int, num_tasks: int, runs: int
+    max_workers: int, num_tasks: int, runs: int, problem_size: int
 ) -> list[Result]:
     """Sets up and runs the NumPy array summation benchmark."""
     logging.info(
@@ -111,11 +113,6 @@ def main(
     return results
 
 
-@dataclass
-class Args(CommonArgs):
-    problem_size: int
-
-
 if __name__ == "__main__":
     parser = create_parser()
     parser.add_argument(
@@ -123,19 +120,18 @@ if __name__ == "__main__":
         "--size",
         dest="problem_size",
         type=int,
-        default=10_000_000,
+        default=DEFAULT_PROBLEM_SIZE,
         help="Problem size (number of elements in the NumPy array).",
     )
-    args = parser.parse_args(namespace=Args)
+    args = parser.parse_args(namespace=CommonArgs)
 
     mp.set_start_method(args.start_method)
     setup_logging(args.log_level)
-
     results = main(
-        problem_size=args.problem_size,
         max_workers=args.max_workers,
         num_tasks=args.num_tasks,
         runs=args.runs,
+        problem_size=args.problem_size,
     )
     python_version = sys.version.partition("(")[0].strip()
     display_results(f"Array Summation Benchmark\n({python_version})", results)

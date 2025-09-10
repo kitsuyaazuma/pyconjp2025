@@ -8,6 +8,7 @@ dependencies = [
     "matplotlib>=3.10.6",
     "numpy>=2.3.2",
     "rich>=14.1.0",
+    "typer>=0.17.4",
 ]
 
 [dependency-groups]

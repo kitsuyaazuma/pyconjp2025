@@ -1,5 +1,5 @@
 from datetime import datetime
-import multiprocessing as mp
+from importlib import import_module
 import os
 from pathlib import Path
 import sys
@@ -13,39 +13,38 @@ from benchmark import (
     save_results_to_csv,
     setup_logging,
 )
-from benchmark.args import CommonArgs, create_parser
-from benchmark.cases import array_sum, prime_count
+import typer
 
 
 class BenchmarkCase(NamedTuple):
+    id: str
     name: str
-    output_filename: str
     problem_size: int
-    max_workers_list: list[int]
     run_function: Callable[[int, int, int, int], list[Result]]
 
 
-MAX_WORKERS_LIST = [2**i for i in range(int(math.log2(os.cpu_count() or 1) + 1))]
-
-BENCHMARK_CASES: list[BenchmarkCase] = [
+CASES_DIR = Path(__file__).parent / "benchmark" / "cases"
+MODULES = [
+    (file_path.stem, import_module(f"benchmark.cases.{file_path.stem}"))
+    for file_path in CASES_DIR.glob("*.py")
+    if not file_path.stem.startswith("_")
+]
+BENCHMARK_CASES = [
     BenchmarkCase(
-        "Array Summation Benchmark",
-        "array_sum",
-        100_000_000,
-        MAX_WORKERS_LIST,
-        array_sum.main,
-    ),
-    BenchmarkCase(
-        "Prime Counting Benchmark",
-        "prime_count",
-        10_000_000,
-        MAX_WORKERS_LIST,
-        prime_count.main,
-    ),
+        id=id,
+        name=getattr(module, "BENCHMARK_NAME"),
+        problem_size=getattr(module, "DEFAULT_PROBLEM_SIZE"),
+        run_function=getattr(module, "main"),
+    )
+    for id, module in MODULES
+]
+MAX_WORKERS_LIST: list[int] = [
+    2**i for i in range(int(math.log2(os.cpu_count() or 1) + 1))
 ]
 
 
-def main(runs: int) -> None:
+def main(runs: int = 1, log_level: str = "INFO") -> None:
+    setup_logging(log_level)
     all_plot_data: list[tuple[str, Path, list[Result]]] = []
     python_version = sys.version.partition("(")[0].strip()
 
@@ -57,34 +56,30 @@ def main(runs: int) -> None:
 
     for case in BENCHMARK_CASES:
         all_results_for_case: list[Result] = []
-        title = f"{case.name}\n({python_version})"
-        for max_workers in case.max_workers_list:
+        for max_workers in MAX_WORKERS_LIST:
             results = case.run_function(
-                case.problem_size, max_workers, max_workers, runs
+                max_workers, max_workers, runs, case.problem_size
             )
-            display_results(title, results)
+            display_results(f"{case.name}\n({python_version})", results)
             for r in results:
                 all_results_for_case.append(
                     Result(r.method, r.avg_time, r.std_time, max_workers)
                 )
 
-        base_filename = case.output_filename
+        base_filename = case.id
         if not sys._is_gil_enabled():  # pyright: ignore[reportPrivateUsage]
             base_filename += "_nogil"
         png_path = results_dir / f"{base_filename}.png"
         csv_path = results_dir / f"{base_filename}.csv"
 
         save_results_to_csv(all_results_for_case, csv_path)
-        all_plot_data.append((title.replace("\n", " "), png_path, all_results_for_case))
+        all_plot_data.append(
+            (f"{case.name} ({python_version})", png_path, all_results_for_case)
+        )
 
     for title, output_filename, results in all_plot_data:
         plot_results(title, results, output_filename)
 
 
 if __name__ == "__main__":
-    parser = create_parser()
-    args = parser.parse_args(namespace=CommonArgs)
-
-    mp.set_start_method(args.start_method)
-    setup_logging(args.log_level)
-    main(args.runs)
+    typer.run(main)

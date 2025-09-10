@@ -1,5 +1,4 @@
 # pyright: reportUnusedCallResult=false
-from dataclasses import dataclass
 import logging
 import math
 import sys
@@ -10,6 +9,9 @@ from ..args import CommonArgs, create_parser
 from ..models import Result
 from ..report import display_results
 from ..runner import run_benchmark, setup_logging
+
+BENCHMARK_NAME = "Prime Counting Benchmark"
+DEFAULT_PROBLEM_SIZE = 10_000_000
 
 
 def is_prime(n: int) -> bool:
@@ -50,7 +52,7 @@ def count_primes_sieve(limit: int) -> int:
 
 
 def main(
-    problem_size: int, max_workers: int, num_tasks: int, runs: int
+    max_workers: int, num_tasks: int, runs: int, problem_size: int
 ) -> list[Result]:
     """Sets up and runs the prime counting benchmark."""
     logging.info(f"Checking primes up to {problem_size:,} using {max_workers} workers.")
@@ -99,11 +101,6 @@ def main(
     return results
 
 
-@dataclass
-class Args(CommonArgs):
-    problem_size: int
-
-
 if __name__ == "__main__":
     parser = create_parser()
     parser.add_argument(
@@ -111,14 +108,14 @@ if __name__ == "__main__":
         "--size",
         dest="problem_size",
         type=int,
-        default=1_000_000,
+        default=DEFAULT_PROBLEM_SIZE,
         help="Problem size (upper limit for the prime countdown).",
     )
-    args = parser.parse_args(namespace=Args)
+    args = parser.parse_args(namespace=CommonArgs)
 
     mp.set_start_method(args.start_method)
     setup_logging(args.log_level)
 
-    results = main(args.problem_size, args.max_workers, args.num_tasks, args.runs)
+    results = main(args.max_workers, args.num_tasks, args.runs, args.problem_size)
     python_version = sys.version.partition("(")[0].strip()
-    display_results(f"Prime Number Benchmark\n({python_version})", results)
+    display_results(f"{BENCHMARK_NAME}\n({python_version})", results)

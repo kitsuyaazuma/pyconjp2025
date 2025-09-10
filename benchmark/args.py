@@ -12,6 +12,7 @@ class CommonArgs:
     num_tasks: int
     runs: int
     start_method: str
+    problem_size: int
 
 
 def create_parser() -> argparse.ArgumentParser:
