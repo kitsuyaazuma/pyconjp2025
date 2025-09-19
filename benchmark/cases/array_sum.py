@@ -46,7 +46,11 @@ def sum_array_shm(
 
 
 def main(
-    max_workers: int, num_tasks: int, runs: int, problem_size: int
+    max_workers: int,
+    num_tasks: int,
+    runs: int,
+    problem_size: int,
+    filter: str | None = None,
 ) -> list[Result]:
     """Sets up and runs the NumPy array summation benchmark."""
     logging.info(
@@ -102,14 +106,15 @@ def main(
             shm.close()
             shm.unlink()
 
-    results = run_benchmark(
-        {
-            "threading": run_with_threading,
-            "multiprocessing": run_with_multiprocessing,
-            "multiprocessing (w/ shm)": run_with_multiprocessing_shm,
-        },
-        runs,
-    )
+    benchmarks = {
+        "threading": run_with_threading,
+        "multiprocessing": run_with_multiprocessing,
+        "multiprocessing (w/ shm)": run_with_multiprocessing_shm,
+    }
+    if filter is not None:
+        benchmarks = {filter: benchmarks[filter]}
+
+    results = run_benchmark(benchmarks, runs)
     return results
 
 
@@ -123,6 +128,15 @@ if __name__ == "__main__":
         default=DEFAULT_PROBLEM_SIZE,
         help="Problem size (number of elements in the NumPy array).",
     )
+    parser.add_argument(
+        "-f",
+        "--filter",
+        dest="filter",
+        type=str,
+        choices=["threading", "multiprocessing", "multiprocessing (w/ shm)"],
+        default=None,
+        help="Run only the specified benchmark.",
+    )
     args = parser.parse_args(namespace=CommonArgs)
 
     mp.set_start_method(args.start_method)
@@ -132,6 +146,7 @@ if __name__ == "__main__":
         num_tasks=args.num_tasks,
         runs=args.runs,
         problem_size=args.problem_size,
+        filter=args.filter,
     )
     python_version = sys.version.partition("(")[0].strip()
     display_results(f"Array Summation Benchmark\n({python_version})", results)
