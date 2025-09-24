@@ -1,3 +1,9 @@
+| Link | Description |
+|:---|:---|
+| [Blog Post](https://alvinvin.hatenablog.jp/entry/17) | 	A detailed article based on this presentation. |
+| [Slides](https://speakerdeck.com/kitsuya0828/beyond-multiprocessing-a-real-world-ml-workload-speedup-with-python-3-dot-13-plus-free-threading) | The slides used for the talk at PyCon JP 2025. |
+| [BlazeFL](https://github.com/blazefl/blazefl) | The free-threading based Federated Learning framework. |
+
 # pyconjp2025
 
 This repository contains the demonstration code for the PyConJP 2025 talk: "[Beyond Multiprocessing: A Real-World ML Workload Speedup with Python 3.13+ Free-Threading](https://2025.pycon.jp/en/timetable/talk/HADBDX)".
