@@ -52,7 +52,11 @@ def count_primes_sieve(limit: int) -> int:
 
 
 def main(
-    max_workers: int, num_tasks: int, runs: int, problem_size: int
+    max_workers: int,
+    num_tasks: int,
+    runs: int,
+    problem_size: int,
+    filter: str | None = None,
 ) -> list[Result]:
     """Sets up and runs the prime counting benchmark."""
     logging.info(f"Checking primes up to {problem_size:,} using {max_workers} workers.")
@@ -91,13 +95,13 @@ def main(
             count = sum(results)
             assert count == expected_count
 
-    results = run_benchmark(
-        {
-            "threading": run_with_threading,
-            "multiprocessing": run_with_multiprocessing,
-        },
-        runs=runs,
-    )
+    benchmarks = {
+        "threading": run_with_threading,
+        "multiprocessing": run_with_multiprocessing,
+    }
+    if filter is not None:
+        benchmarks = {filter: benchmarks[filter]}
+    results = run_benchmark(benchmarks, runs)
     return results
 
 
@@ -111,11 +115,22 @@ if __name__ == "__main__":
         default=DEFAULT_PROBLEM_SIZE,
         help="Problem size (upper limit for the prime countdown).",
     )
+    parser.add_argument(
+        "-f",
+        "--filter",
+        dest="filter",
+        type=str,
+        choices=["threading", "multiprocessing"],
+        default=None,
+        help="Run only the specified benchmark.",
+    )
     args = parser.parse_args(namespace=CommonArgs)
 
     mp.set_start_method(args.start_method)
     setup_logging(args.log_level)
 
-    results = main(args.max_workers, args.num_tasks, args.runs, args.problem_size)
+    results = main(
+        args.max_workers, args.num_tasks, args.runs, args.problem_size, args.filter
+    )
     python_version = sys.version.partition("(")[0].strip()
     display_results(f"{BENCHMARK_NAME}\n({python_version})", results)

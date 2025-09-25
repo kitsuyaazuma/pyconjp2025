@@ -13,6 +13,7 @@ class CommonArgs:
     runs: int
     start_method: str
     problem_size: int
+    filter: str
 
 
 def create_parser() -> argparse.ArgumentParser:
